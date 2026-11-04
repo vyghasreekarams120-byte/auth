@@ -13,10 +13,19 @@
 // Read the role ONLY from req.user.role — never from req.body.
 //
 // Right now it lets everyone through, so the role gates do nothing.
-
-module.exports = function requireRole(...allowedRoles) {
-  return (req, res, next) => {
-    // Replace this pass-through with the real check:
-    next();
-  };
+function requireRole(...allowedRoles) {
+return (req, res, next) => {
+// requireAuth ran first, so req.user exists and is trusted
+if (!req.user) {
+return res.status(401).json({ error: { code: 'UNAUTHENTICATED' } });
+}
+if (!allowedRoles.includes(req.user.role)) {
+// known user, wrong role → 403, not 401
+return res.status(403).json({ error: { code: 'FORBIDDEN' } });
+}
+next(); // role allowed — proceed
 };
+}
+module.exports = {
+  requireRole
+}
